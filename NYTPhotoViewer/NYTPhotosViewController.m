@@ -527,10 +527,12 @@ static const UIEdgeInsets NYTPhotosViewControllerCloseButtonImageInsets = {3, 0,
 
 - (void)pageViewController:(UIPageViewController *)pageViewController didFinishAnimating:(BOOL)finished previousViewControllers:(NSArray *)previousViewControllers transitionCompleted:(BOOL)completed {
     if (completed) {
-        [self updateOverlayInformation];
-        
-        UIViewController <NYTPhotoContainer> *photoViewController = pageViewController.viewControllers.firstObject;
-        [self didNavigateToPhoto:photoViewController.photo];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self updateOverlayInformation];
+            
+            UIViewController <NYTPhotoContainer> *photoViewController = pageViewController.viewControllers.firstObject;
+            [self didNavigateToPhoto:photoViewController.photo];
+        });
     }
 }
 
