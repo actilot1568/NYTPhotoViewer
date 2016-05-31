@@ -19,6 +19,8 @@ static const CGFloat NYTPhotoCaptionViewVerticalMargin = 7.0;
 @property (nonatomic, readonly) NSAttributedString *attributedSummary;
 @property (nonatomic, readonly) NSAttributedString *attributedCredit;
 
+@property (nonatomic, strong) NSLayoutConstraint *heightALC;
+
 @property (nonatomic) UITextView *textView;
 @property (nonatomic) CAGradientLayer *gradientLayer;
 
@@ -51,7 +53,8 @@ static const CGFloat NYTPhotoCaptionViewVerticalMargin = 7.0;
 - (void)didMoveToSuperview {
     [super didMoveToSuperview];
 
-    NSLayoutConstraint *maxHeightConstraint = [NSLayoutConstraint constraintWithItem:self attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationLessThanOrEqual toItem:self.superview attribute:NSLayoutAttributeHeight multiplier:0.3f constant:0.0f];
+    NSLayoutConstraint *maxHeightConstraint = [NSLayoutConstraint constraintWithItem:self attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationLessThanOrEqual toItem:self.superview attribute:NSLayoutAttributeHeight multiplier:0.6f constant:0.0f];
+    self.heightALC = maxHeightConstraint;
     [self.superview addConstraint:maxHeightConstraint];
 }
 
@@ -67,6 +70,7 @@ static const CGFloat NYTPhotoCaptionViewVerticalMargin = 7.0;
     // On iOS 8.x, when this view is height-constrained, neither `self.bounds` nor `self.layer.bounds` reflects the new layout height immediately after `[super layoutSubviews]`. Both of those properties appear correct in the next runloop.
     // This problem doesn't affect iOS 9 and there may be a better solution; PRs welcome.
     dispatch_async(dispatch_get_main_queue(), updateGradientFrame);
+    
 }
 
 - (CGSize)intrinsicContentSize {
@@ -131,7 +135,10 @@ static const CGFloat NYTPhotoCaptionViewVerticalMargin = 7.0;
 - (void)setupGradient {
     self.gradientLayer = [CAGradientLayer layer];
     self.gradientLayer.frame = self.layer.bounds;
-    self.gradientLayer.colors = [NSArray arrayWithObjects:(id)[UIColor clearColor].CGColor, (id)[[UIColor blackColor] colorWithAlphaComponent:0.85].CGColor, nil];
+    self.gradientLayer.colors = [NSArray arrayWithObjects:(id)[UIColor clearColor].CGColor, (id)[[UIColor blackColor] colorWithAlphaComponent:0.55].CGColor,
+                                 (id)[[UIColor blackColor] colorWithAlphaComponent:0.75].CGColor,
+                                 (id)[[UIColor blackColor] colorWithAlphaComponent:0.95].CGColor,
+                                 (id)[[UIColor blackColor] colorWithAlphaComponent:0.98].CGColor, nil];
     [self.layer insertSublayer:self.gradientLayer atIndex:0];
 }
 
