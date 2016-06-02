@@ -10,6 +10,9 @@
 
 #import "tgmath.h"
 
+#import "JNPieLoader.h"
+#import "SDWebImageManager.h"
+
 #ifdef ANIMATED_GIF_SUPPORT
 #import <FLAnimatedImage/FLAnimatedImage.h>
 #endif
@@ -23,6 +26,9 @@
 #else
 @property (nonatomic) UIImageView *imageView;
 #endif
+
+@property (nonatomic) NSArray *imageURLs;
+
 @end
 
 @implementation NYTScalingImageView
@@ -37,7 +43,7 @@
     self = [super initWithCoder:aDecoder];
 
     if (self) {
-        [self commonInitWithImage:nil imageData:nil];
+        [self commonInitWithImage:nil imageData:nil imageURLs:nil];
     }
 
     return self;
@@ -60,7 +66,7 @@
     self = [super initWithFrame:frame];
 
     if (self) {
-        [self commonInitWithImage:image imageData:nil];
+        [self commonInitWithImage:image imageData:nil imageURLs:nil];
     }
     
     return self;
@@ -70,21 +76,31 @@
     self = [super initWithFrame:frame];
     
     if (self) {
-        [self commonInitWithImage:nil imageData:imageData];
+        [self commonInitWithImage:nil imageData:imageData imageURLs:nil];
     }
     
     return self;
 }
 
-- (void)commonInitWithImage:(UIImage *)image imageData:(NSData *)imageData {
-    [self setupInternalImageViewWithImage:image imageData:imageData];
+- (instancetype)initWithImageURLs:(NSArray *)urls frame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    
+    if (self) {
+        [self commonInitWithImage:nil imageData:nil imageURLs:urls];
+    }
+    
+    return self;
+}
+
+- (void)commonInitWithImage:(UIImage *)image imageData:(NSData *)imageData imageURLs:(NSArray *)urls {
+    [self setupInternalImageViewWithImage:image imageData:imageData imageURL:urls];
     [self setupImageScrollView];
     [self updateZoomScale];
 }
 
 #pragma mark - Setup
 
-- (void)setupInternalImageViewWithImage:(UIImage *)image imageData:(NSData *)imageData {
+- (void)setupInternalImageViewWithImage:(UIImage *)image imageData:(NSData *)imageData imageURL:(NSArray *)urls {
     UIImage *imageToUse = image ?: [UIImage imageWithData:imageData];
 
 #ifdef ANIMATED_GIF_SUPPORT
@@ -92,20 +108,25 @@
 #else
     self.imageView = [[UIImageView alloc] initWithImage:imageToUse];
 #endif
-    [self updateImage:imageToUse imageData:imageData];
+        
+    [self updateImage:imageToUse imageData:imageData imageURLs:urls];
     
     [self addSubview:self.imageView];
 }
 
 - (void)updateImage:(UIImage *)image {
-    [self updateImage:image imageData:nil];
+    [self updateImage:image imageData:nil imageURLs:nil];
 }
 
 - (void)updateImageData:(NSData *)imageData {
-    [self updateImage:nil imageData:imageData];
+    [self updateImage:nil imageData:imageData imageURLs:nil];
 }
 
-- (void)updateImage:(UIImage *)image imageData:(NSData *)imageData {
+- (void)updateImageURLs:(NSArray *)imageURLs {
+    [self updateImage:nil imageData:nil imageURLs:imageURLs];
+}
+
+- (void)updateImage:(UIImage *)image imageData:(NSData *)imageData imageURLs:(NSArray *)urls {
 #ifdef DEBUG
 #ifndef ANIMATED_GIF_SUPPORT
     if (imageData != nil) {
@@ -125,12 +146,68 @@
     self.imageView.animatedImage = [[FLAnimatedImage alloc] initWithAnimatedGIFData:imageData];
 #endif
     
-    self.imageView.frame = CGRectMake(0, 0, imageToUse.size.width, imageToUse.size.height);
+    void (^update)(UIImage *) = ^(UIImage* image) {
+        self.imageView.transform = CGAffineTransformIdentity;
+        self.imageView.image = image;
+        self.imageView.frame = CGRectMake(0, 0, image.size.width, image.size.height);
+        
+        self.contentSize = image.size;
+        
+        [self updateZoomScale];
+        [self centerScrollViewContents];
+    };
     
-    self.contentSize = imageToUse.size;
+    update(imageToUse);
     
-    [self updateZoomScale];
-    [self centerScrollViewContents];
+    self.imageURLs = urls;
+    
+    [self downloadImageWithURL:self.imageURLs indexOfCurrentURL:0 increment:YES completion:^(UIImage *image) {
+        update(image);
+    }];
+}
+
+- (void)downloadImageWithURL:(NSArray *)urls indexOfCurrentURL:(NSInteger)index increment:(BOOL)increment completion:(void(^)(UIImage *))completion  {
+    __block NSInteger aIndex = index;
+    
+    
+    JNPieLoader *loader = [JNPieLoader.alloc initWithFrame:CGRectMake(0, 0, 30.f, 30.f)];
+    [self addSubview:loader];
+    if (index == 0) {
+        loader.center = self.imageView.center;
+    } else {
+        CGRect frame = loader.frame;
+        frame.origin.x = 10.f;
+        frame.origin.y = (self.imageView.frame.size.height - loader.frame.size.height) - 10.f;
+        loader.frame = frame;
+        loader.alpha = 0.4f;
+    }
+    loader.hidden = YES;
+    
+    UIImageView *imageView = [UIImageView.alloc initWithFrame:loader.frame];
+    imageView.image = [UIImage imageNamed:@"FeedBlankStatusButton.png"];
+    imageView.alpha = 0.4f;
+    [self addSubview:imageView];
+    
+    [SDWebImageManager.sharedManager downloadImageWithURL:urls[aIndex] options:SDWebImageRetryFailed progress:^(NSInteger receivedSize, NSInteger expectedSize) {
+        if ((float)receivedSize/(float)expectedSize > 0) {
+            imageView.hidden = YES;
+            loader.hidden = NO;
+        }
+        [loader updateCurrentValue:(float)receivedSize/(float)expectedSize];
+    } completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
+        [loader removeFromSuperview];
+        [imageView removeFromSuperview];
+        if (image) {
+            if (completion) {
+                completion(image);
+                aIndex =  aIndex + (increment ? 1 : 0);
+                if (aIndex < urls.count)
+                    [self downloadImageWithURL:urls indexOfCurrentURL:aIndex increment:YES completion:completion];
+            }
+        } else {
+            [self downloadImageWithURL:urls  indexOfCurrentURL:index increment:NO completion:completion];
+        }
+    }];
 }
 
 - (void)setupImageScrollView {

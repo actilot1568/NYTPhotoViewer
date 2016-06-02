@@ -36,6 +36,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithImage:(UIImage *)image frame:(CGRect)frame NS_DESIGNATED_INITIALIZER;
 
 /**
+ *  Initializes a scaling image view with `NSURLs`. This object is a `UIScrollView` that contains a `UIImageView`. This allows for zooming and panning around the image.
+ *
+ *  @param urls `NSURLs` for zooming and panning.
+ *  @param frame The frame of the view.
+ *
+ *  @return A fully initialized object.
+ */
+- (instancetype)initWithImageURLs:(NSArray *)urls frame:(CGRect)frame NS_DESIGNATED_INITIALIZER;
+
+/**
  *  Initializes a scaling image view with `NSData` representing an animated image. This object is a `UIScrollView` that contains a `UIImageView`. This allows for zooming and panning around the image.
  *
  *  @param imageData An `NSData` representing of an animated image for zooming and panning.
@@ -58,6 +68,13 @@ NS_ASSUME_NONNULL_BEGIN
  *  @param imageData The data representing an animated image to display in the image view.
  */
 - (void)updateImageData:(NSData *)imageData;
+
+/**
+ *  Updates the image in the image view and centers and zooms the new image.
+ *
+ *  @param imageURLs The urls representing images to be succesively displayed in the image view.
+ */
+- (void)updateImageURLs:(NSArray *)imageURLs;
 
 /**
  *  Centers the image inside of the scroll view. Typically used after rotation, or when zooming has finished.

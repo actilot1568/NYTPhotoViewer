@@ -26,6 +26,8 @@ Pod::Spec.new do |s|
 
     ss.dependency 'NYTPhotoViewer/Core'
     ss.dependency 'FLAnimatedImage', '~> 1.0.12'
+    ss.dependency 'JNPieLoader', '~> 0.0.1'
+    ss.dependency 'SDWebImage', '~> 3.7'
   end
 
 end

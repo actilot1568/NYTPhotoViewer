@@ -32,6 +32,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, nullable) NSData *imageData;
 
 /**
+ *  The URLs of the images to display.
+ *
+ *  This property's value, if non-`nil`, is preferred over `-image` and `-imageData`. This allows clients to provide image URL.
+ */
+@property (nonatomic, readonly, nullable) NSArray *imageURLs;
+
+/**
  *  A placeholder image for display while the image is loading.
  *
  *  This property is used if and only if `-imageData` returns `nil`.
