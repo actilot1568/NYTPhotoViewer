@@ -195,6 +195,10 @@
         }
         [loader updateCurrentValue:(float)receivedSize/(float)expectedSize];
     } completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
+        if(!error) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"SDWebImageLoaded" object:nil
+                                                              userInfo:@{@"imageUrl" : imageURL.absoluteString}];
+        }
         [loader removeFromSuperview];
         [imageView removeFromSuperview];
         if (image) {
