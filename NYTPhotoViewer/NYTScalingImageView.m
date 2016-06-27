@@ -169,6 +169,9 @@
 - (void)downloadImageWithURL:(NSArray *)urls indexOfCurrentURL:(NSInteger)index increment:(BOOL)increment completion:(void(^)(UIImage *))completion  {
     __block NSInteger aIndex = index;
     
+    if (!urls || urls.count == 0)
+        return;
+    
     
     JNPieLoader *loader = [JNPieLoader.alloc initWithFrame:CGRectMake(0, 0, 30.f, 30.f)];
     [self addSubview:loader];
