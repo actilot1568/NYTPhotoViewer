@@ -190,7 +190,8 @@
     imageView.image = [UIImage imageNamed:@"FeedBlankStatusButton.png"];
     imageView.alpha = 0.4f;
     [self addSubview:imageView];
-    
+  
+    __weak NYTScalingImageView *weakSelf = self;
     [SDWebImageManager.sharedManager downloadImageWithURL:urls[aIndex] options:SDWebImageRetryFailed progress:^(NSInteger receivedSize, NSInteger expectedSize) {
         if ((float)receivedSize/(float)expectedSize > 0) {
             imageView.hidden = YES;
@@ -198,6 +199,7 @@
         }
         [loader updateCurrentValue:(float)receivedSize/(float)expectedSize];
     } completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
+        __strong NYTScalingImageView *strongSelf = weakSelf;
         if(!error) {
             [[NSNotificationCenter defaultCenter] postNotificationName:@"SDWebImageLoaded" object:nil
                                                               userInfo:@{@"imageUrl" : imageURL.absoluteString}];
@@ -209,10 +211,10 @@
                 completion(image);
                 aIndex =  aIndex + (increment ? 1 : 0);
                 if (aIndex < urls.count)
-                    [self downloadImageWithURL:urls indexOfCurrentURL:aIndex increment:YES completion:completion];
+                    [strongSelf downloadImageWithURL:urls indexOfCurrentURL:aIndex increment:YES completion:completion];
             }
         } else {
-            [self downloadImageWithURL:urls  indexOfCurrentURL:index increment:NO completion:completion];
+            [strongSelf downloadImageWithURL:urls  indexOfCurrentURL:index increment:NO completion:completion];
         }
     }];
 }
