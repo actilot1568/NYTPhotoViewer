@@ -28,6 +28,7 @@
 #endif
 
 @property (nonatomic) NSArray *imageURLs;
+@property (nonatomic, strong) JNPieLoader *pieLoader;
 
 @end
 
@@ -175,16 +176,17 @@
     
     JNPieLoader *loader = [JNPieLoader.alloc initWithFrame:CGRectMake(0, 0, 30.f, 30.f)];
     [self addSubview:loader];
+    self.pieLoader = loader;
     if (index == 0) {
-        loader.center = self.imageView.center;
+        self.pieLoader.center = self.imageView.center;
     } else {
-        CGRect frame = loader.frame;
+        CGRect frame = self.pieLoader.frame;
         frame.origin.x = 10.f;
-        frame.origin.y = (self.imageView.frame.size.height - loader.frame.size.height) - 10.f;
-        loader.frame = frame;
-        loader.alpha = 0.4f;
+        frame.origin.y = (self.imageView.frame.size.height - self.pieLoader.frame.size.height) - 10.f;
+        self.pieLoader.frame = frame;
+        self.pieLoader.alpha = 0.4f;
     }
-    loader.hidden = YES;
+    self.pieLoader.hidden = YES;
     
     UIImageView *imageView = [UIImageView.alloc initWithFrame:loader.frame];
     imageView.image = [UIImage imageNamed:@"FeedBlankStatusButton.png"];
@@ -193,18 +195,20 @@
   
     __weak NYTScalingImageView *weakSelf = self;
     [SDWebImageManager.sharedManager downloadImageWithURL:urls[aIndex] options:SDWebImageRetryFailed progress:^(NSInteger receivedSize, NSInteger expectedSize) {
+      __strong NYTScalingImageView *strongSelf = weakSelf;
         if ((float)receivedSize/(float)expectedSize > 0) {
             imageView.hidden = YES;
-            loader.hidden = NO;
+            self.pieLoader.hidden = NO;
         }
-        [loader updateCurrentValue:(float)receivedSize/(float)expectedSize];
+        [self.pieLoader updateCurrentValue:(float)receivedSize/(float)expectedSize];
     } completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
         __strong NYTScalingImageView *strongSelf = weakSelf;
         if(!error) {
             [[NSNotificationCenter defaultCenter] postNotificationName:@"SDWebImageLoaded" object:nil
                                                               userInfo:@{@"imageUrl" : imageURL.absoluteString}];
         }
-        [loader removeFromSuperview];
+        [self.pieLoader removeFromSuperview];
+        self.pieLoader = nil;
         [imageView removeFromSuperview];
         if (image) {
             if (completion) {
